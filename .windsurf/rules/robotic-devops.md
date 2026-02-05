@@ -48,7 +48,15 @@ Global rules for AI-assisted DevOps workflows in this repository.
    - Wait for local verification to complete before pushing
    - Never push changes that haven't been tested locally
 
-5. **Pre-push checks**
+5. **Pipeline verification after pushing**
+   - After pushing to remote, wait 60 seconds for pipeline to start
+   - Monitor pipeline status using `gh run list` and `gh run view`
+   - Wait for pipeline to complete (either succeed or fail)
+   - Do not proceed with further work until pipeline status is determined
+   - If pipeline fails, diagnose and fix issues before proceeding
+   - Only move forward after pipeline succeeds
+
+6. **Pre-push checks**
    - All commits must pass the local defined unit tests and checks
    - For rust projects this is currently `cargo fmt`, `cargo clippy`, and `cargo test`
    - For .NET projects this is currently `dotnet build`, `dotnet test`, and `dotnet format`
