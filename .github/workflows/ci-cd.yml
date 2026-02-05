@@ -1,0 +1,133 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  AZURE_RESOURCE_GROUP: 'haiku-api-rg'
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+      working-directory: ./src/HaikuApi
+    
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+      working-directory: ./src/HaikuApi
+    
+    - name: Run unit tests
+      run: dotnet test --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
+      working-directory: ./tests/HaikuApi.Tests
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: '**/test-results.trx'
+    
+    - name: Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports
+        path: '**/coverage.cobertura.xml'
+    
+    - name: Publish
+      run: dotnet publish --configuration Release --output ./publish
+      working-directory: ./src/HaikuApi
+
+    - name: Upload publish artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: publish-artifacts
+        path: ./src/HaikuApi/publish
+
+  deploy-dev:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download publish artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish-artifacts
+        path: ./publish
+    
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    
+    - name: Deploy Bicep template (Dev)
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}-dev
+        template: ./infra/main.bicep
+        parameters: ./infra/parameters.dev.json
+        deploymentMode: Incremental
+    
+    - name: Deploy to App Service (Dev)
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }}
+        package: ./publish
+
+  deploy-prod:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download publish artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: publish-artifacts
+        path: ./publish
+    
+    - name: Azure Login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    
+    - name: Deploy Bicep template (Prod)
+      uses: azure/arm-deploy@v1
+      with:
+        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}-prod
+        template: ./infra/main.bicep
+        parameters: ./infra/parameters.prod.json
+        deploymentMode: Incremental
+    
+    - name: Deploy to App Service (Prod)
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: haiku-api-prod-${{ secrets.AZURE_RESOURCE_SUFFIX }}
+        package: ./publish
