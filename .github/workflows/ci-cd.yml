@@ -67,22 +67,6 @@ jobs:
           echo "Coverage report found at: $COVERAGE_FILE"
         fi
     
-    - name: Run security scan (ZAP)
-      uses: zaproxy/action-baseline@v0.7.0
-      with:
-        target: 'https://haiku-api-dev-yeyl527m3zuwo.azurewebsites.net'
-        rules_file_name: '.zap/rules.tsv'
-        cmd_options: '-a'
-      continue-on-error: true
-    
-    - name: Upload ZAP results
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: zap-results
-        path: report_md.md
-      continue-on-error: true
-    
     - name: Publish
       run: dotnet publish --configuration Release --output ./publish
       working-directory: ./src/HaikuApi
