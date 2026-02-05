@@ -37,10 +37,12 @@ jobs:
     
     - name: Check test results
       run: |
-        if [ ! -f "tests/HaikuApi.Tests/TestResults/test-results.trx" ]; then
+        TEST_FILE=$(find . -name "test-results.trx" | head -1)
+        if [ -z "$TEST_FILE" ]; then
           echo "::error::Test results file not found"
           exit 1
         fi
+        echo "Test results found at: $TEST_FILE"
     
     - name: Upload test results
       if: always()
@@ -79,6 +81,7 @@ jobs:
       with:
         name: zap-results
         path: report_md.md
+      continue-on-error: true
     
     - name: Publish
       run: dotnet publish --configuration Release --output ./publish
