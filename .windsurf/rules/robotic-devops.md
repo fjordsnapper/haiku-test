@@ -20,14 +20,14 @@ Global rules for AI-assisted DevOps workflows in this repository.
 
 ## Git Workflow
 
-1. **Required branch structure**
-   - `main` - Production branch (stable, deployable code)
-   - `staging` - Pre-production branch (tested, ready for production)
-   - `test` - Testing/QA branch (all tests must pass)
-   - `develop` - Development branch (active development)
-   - All repositories MUST maintain these four branches at all times
-   - Never delete these branches
-   - Merges flow: develop → test → staging → main
+1. **Branch strategy - Trunk-based development**
+   - `main` - Production branch (single source of truth, always deployable)
+   - `develop` - Integration branch for feature development
+   - Short-lived feature/fix branches created from `develop`
+   - Avoid long-lived environment branches (test, staging, deploy) - this is an anti-pattern
+   - Environment promotion is handled through CI/CD pipeline, not branches
+   - Reduces configuration drift and merge conflicts
+   - Merges flow: feature/fix branches → develop → main
 
 2. **Branch naming conventions**
    - `feature/` - New features
@@ -167,11 +167,22 @@ Global rules for AI-assisted DevOps workflows in this repository.
 
 ## Deployment
 
-1. **Staging first**
+1. **Environment promotion through CI/CD (not branches)**
+   - Environment promotion is driven by CI/CD pipeline, not by branches
+   - Single codebase deployed to multiple environments via pipeline stages
+   - Configuration and secrets managed per-environment in GitHub Environments
+   - No long-lived environment branches (test, staging, deploy)
+
+2. **Deployment pipeline stages**
+   - Dev: Automatic deployment on `develop` branch push
+   - Staging: Automatic deployment on `develop` branch push (after dev succeeds)
+   - Production: Manual approval required on `main` branch push
+
+3. **Staging first**
    - Always deploy to staging before production
    - Verify health checks pass
    - Use deployment slots for zero-downtime deployments
 
-2. **Manual triggers for production**
+4. **Manual triggers for production**
    - Deployment workflows should be manually triggered
    - Require approval for production deployments
