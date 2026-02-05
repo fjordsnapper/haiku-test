@@ -50,7 +50,6 @@ resource appServiceLogging 'Microsoft.Web/sites/config@2023-01-01' = {
     detailedErrorLoggingEnabled: true
     httpLoggingEnabled: true
     requestTracingEnabled: true
-    requestTracingExpirationTime: '2024-12-31T23:59:59Z'
   }
 }
 
