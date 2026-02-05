@@ -33,7 +33,18 @@ Global rules for AI-assisted DevOps workflows in this repository.
    - Keep messages concise but descriptive
 
 3. **Pre-push checks**
-   - All commits must pass `cargo fmt`, `cargo clippy`, and `cargo test`
+   - All commits must pass the local defined unit tests and checks
+   - For rust projects this is currently `cargo fmt`, `cargo clippy`, and `cargo test`
+   - For .NET projects this is currently `dotnet build`, `dotnet test`, and `dotnet format`
+   - For python projects this is currently `black`, `isort`, and `pytest`
+   - For node.js projects this is currently `npm run build`, `npm run test`, and `npm run format`
+   - For go projects this is currently `go fmt`, `go test`, and `go vet`
+   - For java projects this is currently `./gradlew build`, `./gradlew test`, and `./gradlew spotlessCheck`
+   - For php projects this is currently `php-cs-fixer`, `phpstan`, and `phpunit`
+   - For ruby projects this is currently `rubocop`, `rspec`, and `reek`
+   - For scala projects this is currently `sbt compile`, `sbt test`, and `sbt scalafmt`
+   - For kotlin projects this is currently `./gradlew build`, `./gradlew test`, and `./gradlew spotlessCheck`
+
    - Git hooks enforce this automatically
 
 ## Security
