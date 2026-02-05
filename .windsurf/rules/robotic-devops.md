@@ -41,7 +41,14 @@ Global rules for AI-assisted DevOps workflows in this repository.
    - Types: `feat`, `fix`, `docs`, `chore`, `security`, `ci`, `refactor`, `test`
    - Keep messages concise but descriptive
 
-4. **Pre-push checks**
+4. **Verification before pushing**
+   - Always verify changes locally before pushing to remote
+   - Run local tests and builds to ensure changes work
+   - Review git diff to confirm all changes are intentional
+   - Wait for local verification to complete before pushing
+   - Never push changes that haven't been tested locally
+
+5. **Pre-push checks**
    - All commits must pass the local defined unit tests and checks
    - For rust projects this is currently `cargo fmt`, `cargo clippy`, and `cargo test`
    - For .NET projects this is currently `dotnet build`, `dotnet test`, and `dotnet format`
