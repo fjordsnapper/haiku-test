@@ -81,6 +81,39 @@ Global rules for AI-assisted DevOps workflows in this repository.
    - Use OIDC federated credentials (no stored secrets)
    - Service principal needs: Contributor, User Access Administrator, AcrPush
 
+## Quality Gates & Deployment Guardrails
+
+1. **Mandatory checks before any deployment**
+   - All unit tests must pass (100% pass rate required)
+   - Code must build successfully with no errors
+   - Code formatting must pass (no style violations)
+   - Static analysis tools must pass (linting, type checking)
+   - **Deployment is blocked if any check fails**
+
+2. **Security scanning requirements**
+   - ZAP (OWASP ZAP) security scan must complete for all deployments
+   - No critical vulnerabilities allowed (CVSS 9.0+)
+   - No high-severity vulnerabilities allowed (CVSS 7.0-8.9) without documented exception
+   - Medium vulnerabilities must be documented in release notes
+   - **Deployment is blocked if critical vulnerabilities are found**
+
+3. **Code coverage requirements**
+   - Minimum 80% code coverage required for staging/prod deployments
+   - New code must maintain or improve coverage percentage
+   - Coverage reports must be generated and archived
+   - **Deployment is blocked if coverage falls below threshold**
+
+4. **Deployment stage gates**
+   - Dev deployment: Requires passing unit tests only
+   - Staging deployment: Requires unit tests + ZAP scan + 80% coverage
+   - Production deployment: Requires all above + manual approval + health check verification
+
+5. **Failure notifications**
+   - Failed checks must generate alerts to team
+   - Failure reports must include root cause and remediation steps
+   - Failed deployments must be logged with timestamps and responsible party
+   - Automatic rollback triggers if health checks fail post-deployment
+
 ## Infrastructure as Code
 
 1. **Bicep/Terraform**

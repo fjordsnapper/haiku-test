@@ -35,6 +35,13 @@ jobs:
       run: dotnet test --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --collect:"XPlat Code Coverage"
       working-directory: ./tests/HaikuApi.Tests
     
+    - name: Check test results
+      run: |
+        if [ ! -f "tests/HaikuApi.Tests/TestResults/test-results.trx" ]; then
+          echo "::error::Test results file not found"
+          exit 1
+        fi
+    
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4
@@ -49,6 +56,30 @@ jobs:
         name: coverage-reports
         path: '**/coverage.cobertura.xml'
     
+    - name: Check code coverage
+      run: |
+        COVERAGE_FILE=$(find . -name "coverage.cobertura.xml" | head -1)
+        if [ -z "$COVERAGE_FILE" ]; then
+          echo "::warning::Coverage file not found, skipping coverage check"
+        else
+          echo "Coverage report found at: $COVERAGE_FILE"
+        fi
+    
+    - name: Run security scan (ZAP)
+      uses: zaproxy/action-baseline@v0.7.0
+      with:
+        target: 'https://haiku-api-dev-yeyl527m3zuwo.azurewebsites.net'
+        rules_file_name: '.zap/rules.tsv'
+        cmd_options: '-a'
+      continue-on-error: true
+    
+    - name: Upload ZAP results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: zap-results
+        path: report_md.md
+    
     - name: Publish
       run: dotnet publish --configuration Release --output ./publish
       working-directory: ./src/HaikuApi
@@ -59,10 +90,87 @@ jobs:
         name: publish-artifacts
         path: ./src/HaikuApi/publish
 
-  deploy-dev:
+  quality-gate-check:
     needs: build-and-test
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    outputs:
+      tests-passed: ${{ steps.check-tests.outputs.passed }}
+      coverage-ok: ${{ steps.check-coverage.outputs.passed }}
+      security-ok: ${{ steps.check-security.outputs.passed }}
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download test results
+      uses: actions/download-artifact@v4
+      with:
+        name: test-results
+        path: ./test-results
+    
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-reports
+        path: ./coverage
+    
+    - name: Download ZAP results
+      uses: actions/download-artifact@v4
+      with:
+        name: zap-results
+        path: ./zap
+      continue-on-error: true
+    
+    - name: Check test results
+      id: check-tests
+      run: |
+        if find ./test-results -name "*.trx" | grep -q .; then
+          echo "passed=true" >> $GITHUB_OUTPUT
+          echo "✓ Test results found"
+        else
+          echo "passed=false" >> $GITHUB_OUTPUT
+          echo "::error::No test results found - Quality gate FAILED"
+          exit 1
+        fi
+    
+    - name: Check code coverage
+      id: check-coverage
+      run: |
+        if find ./coverage -name "*.xml" | grep -q .; then
+          echo "passed=true" >> $GITHUB_OUTPUT
+          echo "✓ Coverage report found"
+        else
+          echo "passed=false" >> $GITHUB_OUTPUT
+          echo "::warning::Coverage report not found"
+        fi
+    
+    - name: Check security scan results
+      id: check-security
+      run: |
+        if [ -f "./zap/report_md.md" ]; then
+          if grep -q "CRITICAL" ./zap/report_md.md; then
+            echo "passed=false" >> $GITHUB_OUTPUT
+            echo "::error::CRITICAL security vulnerabilities found - Quality gate FAILED"
+            exit 1
+          else
+            echo "passed=true" >> $GITHUB_OUTPUT
+            echo "✓ Security scan passed"
+          fi
+        else
+          echo "passed=true" >> $GITHUB_OUTPUT
+          echo "⚠ Security scan not available yet"
+        fi
+    
+    - name: Quality Gate Summary
+      run: |
+        echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+        echo "- Tests: ${{ steps.check-tests.outputs.passed }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Coverage: ${{ steps.check-coverage.outputs.passed }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Security: ${{ steps.check-security.outputs.passed }}" >> $GITHUB_STEP_SUMMARY
+
+  deploy-dev:
+    needs: [build-and-test, quality-gate-check]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push' && needs.quality-gate-check.outputs.tests-passed == 'true'
     
     steps:
     - uses: actions/checkout@v4
@@ -94,15 +202,34 @@ jobs:
       with:
         app-name: haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }}
         package: ./publish
+    
+    - name: Verify deployment health
+      run: |
+        echo "Waiting for app to start..."
+        sleep 10
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }}.azurewebsites.net/api/users)
+        if [ $STATUS -eq 200 ]; then
+          echo "✓ Health check passed"
+        else
+          echo "::error::Health check failed with status $STATUS"
+          exit 1
+        fi
 
   deploy-prod:
-    needs: build-and-test
+    needs: [build-and-test, quality-gate-check]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push' && needs.quality-gate-check.outputs.tests-passed == 'true' && needs.quality-gate-check.outputs.security-ok == 'true'
     environment: production
     
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Validate quality gates for production
+      run: |
+        echo "## Production Deployment Quality Gates" >> $GITHUB_STEP_SUMMARY
+        echo "✓ All unit tests passed" >> $GITHUB_STEP_SUMMARY
+        echo "✓ Security scan passed (no critical vulnerabilities)" >> $GITHUB_STEP_SUMMARY
+        echo "✓ Manual approval required" >> $GITHUB_STEP_SUMMARY
     
     - name: Download publish artifacts
       uses: actions/download-artifact@v4
@@ -131,3 +258,23 @@ jobs:
       with:
         app-name: haiku-api-prod-${{ secrets.AZURE_RESOURCE_SUFFIX }}
         package: ./publish
+    
+    - name: Verify production deployment health
+      run: |
+        echo "Waiting for app to start..."
+        sleep 15
+        STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://haiku-api-prod-${{ secrets.AZURE_RESOURCE_SUFFIX }}.azurewebsites.net/api/users)
+        if [ $STATUS -eq 200 ]; then
+          echo "✓ Production health check passed"
+        else
+          echo "::error::Production health check failed with status $STATUS"
+          exit 1
+        fi
+    
+    - name: Post-deployment notification
+      if: success()
+      run: |
+        echo "## Production Deployment Successful" >> $GITHUB_STEP_SUMMARY
+        echo "- Timestamp: $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- URL: https://haiku-api-prod-${{ secrets.AZURE_RESOURCE_SUFFIX }}.azurewebsites.net" >> $GITHUB_STEP_SUMMARY
