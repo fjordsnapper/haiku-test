@@ -20,19 +20,28 @@ Global rules for AI-assisted DevOps workflows in this repository.
 
 ## Git Workflow
 
-1. **Branch naming conventions**
+1. **Required branch structure**
+   - `main` - Production branch (stable, deployable code)
+   - `staging` - Pre-production branch (tested, ready for production)
+   - `test` - Testing/QA branch (all tests must pass)
+   - `develop` - Development branch (active development)
+   - All repositories MUST maintain these four branches at all times
+   - Never delete these branches
+   - Merges flow: develop → test → staging → main
+
+2. **Branch naming conventions**
    - `feature/` - New features
    - `fix/` - Bug fixes
    - `security/` - Security-related changes
    - `chore/` - Maintenance tasks
    - `docs/` - Documentation updates
 
-2. **Commit message format**
+3. **Commit message format**
    - Use conventional commits: `type: description`
    - Types: `feat`, `fix`, `docs`, `chore`, `security`, `ci`, `refactor`, `test`
    - Keep messages concise but descriptive
 
-3. **Pre-push checks**
+4. **Pre-push checks**
    - All commits must pass the local defined unit tests and checks
    - For rust projects this is currently `cargo fmt`, `cargo clippy`, and `cargo test`
    - For .NET projects this is currently `dotnet build`, `dotnet test`, and `dotnet format`
