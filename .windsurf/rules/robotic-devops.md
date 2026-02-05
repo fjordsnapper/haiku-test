@@ -47,6 +47,36 @@ Global rules for AI-assisted DevOps workflows in this repository.
 
    - Git hooks enforce this automatically
 
+4. **Protected branches with gated check-ins**
+   - `main` / `master` - Production branch
+     - Requires pull request review (minimum 1 approval)
+     - Requires all status checks to pass (build, tests, security scan)
+     - Requires code review before merge
+     - Requires up-to-date branch before merge
+     - Dismiss stale pull request approvals when new commits are pushed
+     - Require signed commits
+   
+   - `staging` - Pre-production branch
+     - Requires pull request review (minimum 1 approval)
+     - Requires all status checks to pass (build, tests, security scan)
+     - Requires code review before merge
+     - Requires up-to-date branch before merge
+     - Dismiss stale pull request approvals when new commits are pushed
+   
+   - `develop` - Development branch
+     - Requires pull request review (minimum 1 approval)
+     - Requires all status checks to pass (build, tests)
+     - Requires code review before merge
+     - Requires up-to-date branch before merge
+
+5. **Pull request requirements**
+   - All PRs must reference a GitHub issue
+   - PR title must follow conventional commits format
+   - PR description must include acceptance criteria
+   - All conversations must be resolved before merge
+   - At least one approval required before merge
+   - No direct pushes to protected branches allowed
+
 ## Security
 
 1. **Never commit secrets**
