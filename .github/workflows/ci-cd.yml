@@ -10,6 +10,8 @@ env:
   DOTNET_VERSION: '9.0.x'
   AZURE_RESOURCE_GROUP: 'haiku-api-rg'
   AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  AZURE_AD_CLIENT_ID: ${{ secrets.AZURE_AD_CLIENT_ID }}
+  AZURE_AD_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
 
 jobs:
   build-and-test:
@@ -126,6 +128,20 @@ jobs:
         app-name: haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }}
         package: ./publish
     
+    - name: Configure Azure AD settings (Dev)
+      uses: azure/CLI@v1
+      with:
+        azcliversion: latest
+        inlineScript: |
+          az webapp config appsettings set \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}-dev \
+            --name haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }} \
+            --settings \
+            AzureAd__Instance="https://login.microsoftonline.com/" \
+            AzureAd__TenantId="${{ env.AZURE_AD_TENANT_ID }}" \
+            AzureAd__ClientId="${{ env.AZURE_AD_CLIENT_ID }}" \
+            AzureAd__Audience="${{ env.AZURE_AD_CLIENT_ID }}"
+    
     - name: Verify deployment health
       run: |
         echo "Waiting for app to start..."
@@ -181,6 +197,20 @@ jobs:
       with:
         app-name: haiku-api-prod-${{ secrets.AZURE_RESOURCE_SUFFIX }}
         package: ./publish
+    
+    - name: Configure Azure AD settings (Prod)
+      uses: azure/CLI@v1
+      with:
+        azcliversion: latest
+        inlineScript: |
+          az webapp config appsettings set \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}-prod \
+            --name haiku-api-prod-${{ secrets.AZURE_RESOURCE_SUFFIX }} \
+            --settings \
+            AzureAd__Instance="https://login.microsoftonline.com/" \
+            AzureAd__TenantId="${{ env.AZURE_AD_TENANT_ID }}" \
+            AzureAd__ClientId="${{ env.AZURE_AD_CLIENT_ID }}" \
+            AzureAd__Audience="${{ env.AZURE_AD_CLIENT_ID }}"
     
     - name: Verify production deployment health
       run: |
