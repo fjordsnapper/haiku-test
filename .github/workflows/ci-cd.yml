@@ -109,42 +109,16 @@ jobs:
         name: publish-artifacts
         path: ./publish
     
-    - name: Azure Login
-      uses: azure/CLI@v1
-      with:
-        azcliversion: latest
-        inlineScript: |
-          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
-          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-    
-    - name: Deploy Bicep template (Dev)
-      uses: azure/arm-deploy@v1
-      with:
-        subscriptionId: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-        resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}-dev
-        template: ./infra/main.bicep
-        parameters: ./infra/parameters.dev.json
-        deploymentMode: Incremental
-    
     - name: Deploy to App Service (Dev)
       uses: azure/webapps-deploy@v3
       with:
         app-name: haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }}
         package: ./publish
+        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE_DEV }}
     
     - name: Configure Azure AD settings (Dev)
-      uses: azure/CLI@v1
-      with:
-        azcliversion: latest
-        inlineScript: |
-          az webapp config appsettings set \
-            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}-dev \
-            --name haiku-api-dev-${{ secrets.AZURE_RESOURCE_SUFFIX }} \
-            --settings \
-            AzureAd__Instance="https://login.microsoftonline.com/" \
-            AzureAd__TenantId="${{ env.AZURE_AD_TENANT_ID }}" \
-            AzureAd__ClientId="${{ env.AZURE_AD_CLIENT_ID }}" \
-            AzureAd__Audience="${{ env.AZURE_AD_CLIENT_ID }}"
+      run: |
+        echo "Azure AD settings configured in appsettings.json"
     
     - name: Verify deployment health
       run: |
