@@ -2,7 +2,7 @@ param location string = resourceGroup().location
 param environment string = 'dev'
 param appServicePlanName string = 'haiku-api-plan-${environment}'
 param appServiceName string = 'haiku-api-${environment}-${uniqueString(resourceGroup().id)}'
-param skuName string = 'B1'
+param skuName string = 'F1'
 param skuCapacity int = 1
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2023-01-01' = {
@@ -29,7 +29,6 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
     httpsOnly: true
     siteConfig: {
       linuxFxVersion: 'DOTNETCORE|9.0'
-      alwaysOn: true
       http20Enabled: true
       minTlsVersion: '1.2'
       appSettings: [
@@ -38,7 +37,6 @@ resource appService 'Microsoft.Web/sites@2023-01-01' = {
           value: environment
         }
       ]
-      healthCheckPath: '/health'
     }
   }
 }
