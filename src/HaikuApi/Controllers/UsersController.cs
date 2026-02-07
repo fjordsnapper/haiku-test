@@ -25,7 +25,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public async Task<ActionResult<User>> GetUser(int id)
+    public async Task<ActionResult<User>> GetUser(short id)
     {
         var user = await _userService.GetUserByIdAsync(id);
         if (user == null)
@@ -42,7 +42,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateUser(int id, User user)
+    public async Task<IActionResult> UpdateUser(short id, User user)
     {
         var updatedUser = await _userService.UpdateUserAsync(id, user);
         if (updatedUser == null)
@@ -52,7 +52,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteUser(int id)
+    public async Task<IActionResult> DeleteUser(short id)
     {
         var result = await _userService.DeleteUserAsync(id);
         if (!result)

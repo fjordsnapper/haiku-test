@@ -5,14 +5,14 @@ namespace HaikuApi.Services;
 public class UserService : IUserService
 {
     private static readonly List<User> Users = new();
-    private static int _nextId = 1;
+    private static short _nextId = 1;
 
     public Task<IEnumerable<User>> GetAllUsersAsync()
     {
         return Task.FromResult(Users.AsEnumerable());
     }
 
-    public Task<User?> GetUserByIdAsync(int id)
+    public Task<User?> GetUserByIdAsync(short id)
     {
         var user = Users.FirstOrDefault(u => u.Id == id);
         return Task.FromResult(user);
@@ -27,7 +27,7 @@ public class UserService : IUserService
         return Task.FromResult(user);
     }
 
-    public Task<User?> UpdateUserAsync(int id, User user)
+    public Task<User?> UpdateUserAsync(short id, User user)
     {
         var existingUser = Users.FirstOrDefault(u => u.Id == id);
         if (existingUser == null)
@@ -41,7 +41,7 @@ public class UserService : IUserService
         return Task.FromResult<User?>(existingUser);
     }
 
-    public Task<bool> DeleteUserAsync(int id)
+    public Task<bool> DeleteUserAsync(short id)
     {
         var user = Users.FirstOrDefault(u => u.Id == id);
         if (user == null)

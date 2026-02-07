@@ -97,7 +97,7 @@ public class UsersControllerAuthenticationTests
     [Fact]
     public async Task GetUser_WithoutAuthentication_ShouldBeProtected()
     {
-        _mockUserService.Setup(s => s.GetUserByIdAsync(It.IsAny<int>()))
+        _mockUserService.Setup(s => s.GetUserByIdAsync(It.IsAny<short>()))
             .ReturnsAsync((User?)null);
 
         var result = await _controller.GetUser(1);
@@ -121,7 +121,7 @@ public class UsersControllerAuthenticationTests
     public async Task UpdateUser_WithoutAuthentication_ShouldBeProtected()
     {
         var user = new User { FirstName = "Test", LastName = "User", Email = "test@example.com" };
-        _mockUserService.Setup(s => s.UpdateUserAsync(It.IsAny<int>(), It.IsAny<User>()))
+        _mockUserService.Setup(s => s.UpdateUserAsync(It.IsAny<short>(), It.IsAny<User>()))
             .ReturnsAsync(user);
 
         var result = await _controller.UpdateUser(1, user);
@@ -132,7 +132,7 @@ public class UsersControllerAuthenticationTests
     [Fact]
     public async Task DeleteUser_WithoutAuthentication_ShouldBeProtected()
     {
-        _mockUserService.Setup(s => s.DeleteUserAsync(It.IsAny<int>()))
+        _mockUserService.Setup(s => s.DeleteUserAsync(It.IsAny<short>()))
             .ReturnsAsync(true);
 
         var result = await _controller.DeleteUser(1);
