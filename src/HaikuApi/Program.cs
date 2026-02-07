@@ -1,8 +1,13 @@
+using HaikuApi.Configuration;
 using HaikuApi.Services;
 using Microsoft.Identity.Web;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add feature flags configuration
+builder.Services.Configure<FeatureFlags>(builder.Configuration.GetSection("FeatureFlags"));
+builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
 
 // Add Azure AD authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
