@@ -5,6 +5,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Add Application Insights
+builder.Services.AddApplicationInsightsTelemetry();
+builder.Services.AddSingleton<ITelemetryService, TelemetryService>();
+
 // Add feature flags configuration
 builder.Services.Configure<FeatureFlags>(builder.Configuration.GetSection("FeatureFlags"));
 builder.Services.AddSingleton<IFeatureFlagService, FeatureFlagService>();
@@ -17,6 +21,13 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserService>(provider =>
+    new UserServiceWithTelemetry(
+        provider.GetRequiredService<UserService>(),
+        provider.GetRequiredService<IFeatureFlagService>(),
+        provider.GetRequiredService<ITelemetryService>()
+    )
+);
 
 var app = builder.Build();
 

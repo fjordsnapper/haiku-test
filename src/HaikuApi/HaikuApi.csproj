@@ -12,6 +12,8 @@
     <PackageReference Include="Microsoft.Identity.Web.GraphServiceClient" Version="2.21.0" />
     <PackageReference Include="Azure.Identity" Version="1.11.4" />
     <PackageReference Include="Azure.Security.KeyVault.Secrets" Version="4.6.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.AspNetCore" Version="2.22.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights" Version="2.22.4" />
   </ItemGroup>
 
 </Project>
