@@ -143,6 +143,43 @@ Global rules for AI-assisted DevOps workflows in this repository.
    - Enable A/B testing of performance improvements
    - Example: `UseOptimizedDataTypes` flag for toggling data type optimizations
 
+## Cost Optimization & Cloud Economics
+
+1. **Always choose the cheapest viable solution**
+   - Use Azure Container Instances instead of App Service (pay-per-second vs hourly)
+   - Container Instances: ~$5-10/month for dev environments
+   - App Service Free tier: Limited, App Service B1: ~$15/month
+   - Estimated savings: 50-70% by using Container Instances
+
+2. **Resource sizing**
+   - Start with minimum resources: 1 CPU core, 1 GB RAM
+   - Scale up only after monitoring shows need
+   - Use auto-scaling based on actual demand
+   - Monitor cost impact of each resource increase
+
+3. **Consumption-based pricing**
+   - Prefer services with pay-per-use billing (Container Instances, Functions)
+   - Avoid always-on services (App Service) for non-production
+   - Use spot instances and reserved capacity for production
+
+4. **Cost monitoring and alerts**
+   - Integrate Application Insights for cost tracking
+   - Set up Azure Cost Management alerts
+   - Review costs weekly during development
+   - Track cost impact of feature flags and optimizations
+
+5. **Infrastructure as Code cost optimization**
+   - Document estimated monthly costs in Bicep outputs
+   - Include cost estimates in deployment summaries
+   - Review Bicep templates for cost-saving opportunities
+   - Use parameter files to switch between cost tiers per environment
+
+6. **Development environment guidelines**
+   - Dev: Container Instances (cheapest, ~$5-10/month)
+   - Staging: App Service B1 or Container Instances (~$15-20/month)
+   - Production: App Service B2+ with auto-scaling (cost varies)
+   - Never use premium tiers in dev/staging unless required
+
 ## Quality Gates & Deployment Guardrails
 
 1. **Mandatory checks before any deployment**
