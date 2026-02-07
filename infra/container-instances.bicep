@@ -5,6 +5,10 @@ param containerImage string
 param port int = 80
 param cpuCores int = 1
 param memoryInGB int = 1
+param acrUsername string = 'haikuapiacr'
+@secure()
+param acrPassword string
+param acrServer string = 'haikuapiacr.azurecr.io'
 
 resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01' = {
   name: containerGroupName
@@ -61,6 +65,13 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
       }
     ]
     osType: 'Linux'
+    imageRegistryCredentials: [
+      {
+        server: acrServer
+        username: acrUsername
+        password: acrPassword
+      }
+    ]
     ipAddress: {
       type: 'Public'
       ports: [

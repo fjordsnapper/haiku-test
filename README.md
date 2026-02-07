@@ -202,3 +202,5 @@ dotnet test tests/HaikuApi.Tests/ /p:CollectCoverage=true
 ## License
 
 MIT
+
+# Deployment triggered with GitHub secrets configured

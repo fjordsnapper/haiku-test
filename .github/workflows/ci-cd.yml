@@ -116,11 +116,10 @@ jobs:
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
       with:
-        context: ./src/HaikuApi
+        context: .
+        file: ./Dockerfile
         push: true
         tags: ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-        cache-from: type=registry,ref=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:buildcache
-        cache-to: type=registry,ref=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
   deploy-dev:
     needs: [build-and-test, quality-gate-check, build-and-push-image]
@@ -130,20 +129,22 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-    
     - name: Deploy Container Instances
-      uses: azure/arm-deploy@v1
-      with:
-        resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}-dev
-        template: ./infra/container-instances.bicep
-        parameters: |
-          location=northeurope
-          environment=dev
-          containerImage=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+      env:
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_AD_TENANT_ID }}
+      run: |
+        # Login with service principal
+        az login --service-principal -u "$AZURE_CLIENT_ID" -p "$AZURE_CLIENT_SECRET" --tenant "$AZURE_TENANT_ID"
+        az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+        
+        # Deploy Container Instances
+        az deployment group create \
+          --resource-group "${{ env.AZURE_RESOURCE_GROUP }}-dev" \
+          --template-file ./infra/container-instances.bicep \
+          --parameters location=northeurope environment=dev containerImage="${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" acrUsername="${{ secrets.AZURE_REGISTRY_USERNAME }}" acrPassword="${{ secrets.AZURE_REGISTRY_PASSWORD }}" acrServer="${{ env.REGISTRY_URL }}"
     
     - name: Deployment Success
       run: |
