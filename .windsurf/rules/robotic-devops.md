@@ -120,6 +120,29 @@ Global rules for AI-assisted DevOps workflows in this repository.
    - Use OIDC federated credentials (no stored secrets)
    - Service principal needs: Contributor, User Access Administrator, AcrPush
 
+## Performance & Optimization
+
+1. **Data type optimization**
+   - Analyze all data types for unnecessary memory usage
+   - Use smaller types when appropriate (e.g., `short` instead of `int` for limited ranges)
+   - Document memory savings in commit messages
+   - Example: User IDs using `short` (2 bytes) instead of `int` (4 bytes) = 50% reduction
+
+2. **Benchmarking requirements**
+   - Create benchmarks for performance-critical code paths
+   - Use BenchmarkDotNet for .NET projects
+   - Compare optimized vs legacy implementations
+   - Include memory allocation diagnostics
+   - Run benchmarks separately from unit tests (they are resource-intensive)
+   - Document performance improvements in release notes
+
+3. **Feature flags for optimizations**
+   - Implement feature flags to toggle optimizations in production
+   - Allow rollback to legacy implementations without code changes
+   - Configuration-driven via `appsettings.json` per environment
+   - Enable A/B testing of performance improvements
+   - Example: `UseOptimizedDataTypes` flag for toggling data type optimizations
+
 ## Quality Gates & Deployment Guardrails
 
 1. **Mandatory checks before any deployment**
