@@ -95,7 +95,7 @@ jobs:
         echo "✓ Build and tests passed" >> $GITHUB_STEP_SUMMARY
         echo "✓ Ready for deployment" >> $GITHUB_STEP_SUMMARY
 
-  deploy-dev:
+  build-and-push-image:
     needs: [build-and-test, quality-gate-check]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push' && needs.quality-gate-check.outputs.tests-passed == 'true'
@@ -103,20 +103,60 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Download publish artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: publish-artifacts
-        path: ./publish
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
     
-    - name: Deployment Ready
+    - name: Log in to Azure Container Registry
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ env.REGISTRY_URL }}
+        username: ${{ secrets.AZURE_REGISTRY_USERNAME }}
+        password: ${{ secrets.AZURE_REGISTRY_PASSWORD }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./src/HaikuApi
+        push: true
+        tags: ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:latest,${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+        cache-from: type=registry,ref=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:buildcache
+        cache-to: type=registry,ref=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+  deploy-dev:
+    needs: [build-and-test, quality-gate-check, build-and-push-image]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push' && needs.quality-gate-check.outputs.tests-passed == 'true'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Deploy Container Instances
+      uses: azure/arm-deploy@v1
+      with:
+        resourceGroupName: ${{ env.AZURE_RESOURCE_GROUP }}-dev
+        template: ./infra/container-instances.bicep
+        parameters: |
+          location=northeurope
+          environment=dev
+          containerImage=${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+    
+    - name: Deployment Success
       run: |
-        echo "## Deployment Status" >> $GITHUB_STEP_SUMMARY
+        echo "## Container Instances Deployment Status" >> $GITHUB_STEP_SUMMARY
         echo "✓ Build and tests passed" >> $GITHUB_STEP_SUMMARY
-        echo "✓ Artifacts ready for deployment" >> $GITHUB_STEP_SUMMARY
+        echo "✓ Docker image built and pushed to ACR" >> $GITHUB_STEP_SUMMARY
+        echo "✓ Container Instances deployed successfully" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Note:** Deployment to Azure requires VM quota approval in private tenant subscription" >> $GITHUB_STEP_SUMMARY
-        echo "Once quota is approved, configure AZURE_PUBLISH_PROFILE_DEV secret and uncomment deployment steps" >> $GITHUB_STEP_SUMMARY
+        echo "**Deployment Details:**" >> $GITHUB_STEP_SUMMARY
+        echo "- Environment: Development" >> $GITHUB_STEP_SUMMARY
+        echo "- Region: northeurope" >> $GITHUB_STEP_SUMMARY
+        echo "- Image: ${{ env.REGISTRY_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Estimated Cost: ~$5-10/month" >> $GITHUB_STEP_SUMMARY
 
   deploy-prod:
     needs: [build-and-test, quality-gate-check]

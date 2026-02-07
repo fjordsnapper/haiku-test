@@ -1,7 +1,7 @@
 param location string = resourceGroup().location
 param environment string = 'dev'
 param containerGroupName string = 'haiku-api-${environment}-${uniqueString(resourceGroup().id)}'
-param containerImage string = 'mcr.microsoft.com/dotnet/samples:aspnetapp-nanoserver-ltsc2022'
+param containerImage string
 param port int = 80
 param cpuCores int = 1
 param memoryInGB int = 1
