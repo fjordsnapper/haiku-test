@@ -73,8 +73,15 @@ app.UseSwaggerUI(options =>
 });
 
 app.UseHttpsRedirection();
+
 app.UseAuthentication();
 app.UseAuthorization();
+
 app.MapControllers();
+
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }))
+    .WithName("Health")
+    .WithOpenApi()
+    .AllowAnonymous();
 
 app.Run();
