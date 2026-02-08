@@ -46,11 +46,11 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
             }
             {
               name: 'AzureAd__ClientId'
-              value: '1749f899-b2db-4ad3-8a06-f5689ddd090e'
+              value: '705a8871-0d6c-4a08-85bd-9242381ab523'
             }
             {
               name: 'AzureAd__Audience'
-              value: '1749f899-b2db-4ad3-8a06-f5689ddd090e'
+              value: '705a8871-0d6c-4a08-85bd-9242381ab523'
             }
             {
               name: 'FeatureFlags__UseOptimizedDataTypes'
