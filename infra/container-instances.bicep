@@ -38,11 +38,11 @@ resource containerGroup 'Microsoft.ContainerInstance/containerGroups@2023-05-01'
             }
             {
               name: 'AzureAd__Instance'
-              value: 'https://login.microsoftonline.com/'
+              value: 'https://login.microsoftonline.com/common'
             }
             {
               name: 'AzureAd__TenantId'
-              value: 'f57aa600-9672-40c1-a836-3981a7d7d95f'
+              value: 'common'
             }
             {
               name: 'AzureAd__ClientId'
