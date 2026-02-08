@@ -31,10 +31,7 @@ builder.Services.AddScoped<IUserService>(provider =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
